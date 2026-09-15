@@ -18,10 +18,26 @@ import {
   type StyleProfile,
 } from './schemas/style-profile.schema';
 
+// Definiciones del vocabulario cerrado de estilo - deben mantenerse en sync con STYLE_VALUES
+// en outfit-analysis.schema.ts. Se repiten tal cual en ambos prompts (análisis por prenda y
+// síntesis de perfil) para que el modelo sea consistente entre las dos llamadas.
+const STYLE_TAG_DEFINITIONS =
+  'streetwear: urbano, oversized, gráficos, capas, tenis chunky. ' +
+  'casual: básico cómodo del día a día, sin ostentación. ' +
+  'old_money: elegante, sofisticado, colores neutros/clásicos, materiales de calidad. ' +
+  'preppy: universitario/náutico, polos, blazers, colores tradicionales. ' +
+  'romantico: femenino, fluido, detalles delicados, seductor o de noche. ' +
+  'alternativo: grunge, gótico, y2k, dramático, siluetas poco convencionales. ' +
+  'cottagecore: natural, artesanal, floral, texturas orgánicas. ' +
+  'creativo: solo si ninguna de las anteriores aplica bien.';
+
 const ANALYSIS_PROMPT =
   'Analiza esta imagen de un outfit. Identifica cada prenda visible y describe, para cada una, ' +
   'su categoría (ej. camisa, pantalón, zapatos), color predominante, material, patrón (ej. liso, ' +
-  'a rayas, estampado) y estilo (ej. casual, formal, deportivo). ' +
+  'a rayas, estampado) y estilo. ' +
+  'Para el estilo, elige EXACTAMENTE uno de estos 8 valores (no inventes otros, no combines ' +
+  `varios): streetwear, casual, old_money, preppy, romantico, alternativo, cottagecore, creativo. ` +
+  `Definición de cada uno: ${STYLE_TAG_DEFINITIONS} ` +
   'Además de identificar las prendas base, identifica: ' +
   '1. is_statement_piece en cada prenda: true si la prenda es muy difícil de sustituir por una ' +
   'genérica de tienda (ej. print único, bordado elaborado, corte muy particular, color/textura ' +
@@ -40,8 +56,10 @@ const ANALYSIS_PROMPT =
 const STYLE_PROFILE_PROMPT =
   'Eres un analista de estilo de moda. Te voy a dar datos agregados (no imágenes) sobre un ' +
   'conjunto de outfits de un usuario: cuántas imágenes se analizaron, las categorías de prendas ' +
-  'esenciales detectadas (con su color, material, patrón y estilo predominante, y qué tan ' +
-  'frecuentes son), y candidatos de accesorios recurrentes. Con esto: ' +
+  'esenciales detectadas (con su color, material, patrón y estilo predominante - el estilo viene ' +
+  `de un vocabulario cerrado de 8 valores: ${STYLE_TAG_DEFINITIONS} - úsalo tal cual para tu ` +
+  'análisis, no lo reinterpretes), y qué tan frecuentes son, y candidatos de accesorios ' +
+  'recurrentes. Con esto: ' +
   '1. Escribe un styleNarrative de 3 a 5 frases sobre el estilo general, la paleta de colores, ' +
   'los materiales predominantes, para qué clima es apto el guardarropa, y qué lo hace distintivo. ' +
   'Basate estrictamente en los datos que te doy - si no hay una etiqueta de estilo clara, di algo ' +

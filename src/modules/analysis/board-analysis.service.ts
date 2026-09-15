@@ -317,7 +317,10 @@ export class BoardAnalysisService {
 
     const stores = await this.productCatalogRepository.getActiveStores();
     const storesById: Record<string, RankingStoreInfo> = Object.fromEntries(
-      stores.map((store) => [store.id, {}]),
+      stores.map((store) => [
+        store.id,
+        { isNational: store.isNational, styleTags: store.styleTags, isVersatile: store.isVersatile },
+      ]),
     );
 
     const results = await Promise.all(
@@ -344,7 +347,7 @@ export class BoardAnalysisService {
       };
 
       const rawCandidates = await this.productSearchService.searchForMissingGarment(missingGarment);
-      const filtered = filterCandidates(rawCandidates, constraints);
+      const filtered = filterCandidates(rawCandidates, { ...constraints, category: essential.category });
 
       if (filtered.length === 0) {
         return [];

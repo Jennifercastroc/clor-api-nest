@@ -2,6 +2,9 @@ export interface StoreRecord {
   id: string;
   integrationType: string;
   config: Record<string, unknown>;
+  isNational: boolean;
+  styleTags: string[];
+  isVersatile: boolean;
 }
 
 export interface NormalizedProduct {
