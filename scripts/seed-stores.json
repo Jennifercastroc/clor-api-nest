@@ -1,0 +1,11 @@
+[
+    {"name":"Dynamo Brand","slug":"dynamo-brand","integration_type":"shopify_mcp","active":true,"config":{"base_url":"https://dynamobrand.co","mcp_endpoint":"/api/ucp/mcp"}},
+    {"name":"Scarsa","slug":"scarsa","integration_type":"shopify_mcp","active":true,"config":{"base_url":"https://scarsa.co","mcp_endpoint":"/api/ucp/mcp"}},
+    {"name":"Ticket Stores","slug":"ticket-stores","integration_type":"shopify_mcp","active":true,"config":{"base_url":"https://ticketstores.co","mcp_endpoint":"/api/ucp/mcp"}},
+    {"name":"Simona","slug":"simona","integration_type":"shopify_mcp","active":true,"config":{"base_url":"https://simona.moda","mcp_endpoint":"/api/ucp/mcp"}},
+    {"name":"Vida Mía","slug":"vida-mia","integration_type":"shopify_mcp","active":true,"config":{"base_url":"https://vidamia.co","mcp_endpoint":"/api/ucp/mcp"}},
+    {"name":"Adrissa","slug":"adrissa","integration_type":"shopify_mcp","active":true,"config":{"base_url":"https://www.adrissa.com.co","mcp_endpoint":"/api/ucp/mcp"}},
+    {"name":"Tennis","slug":"tennis","integration_type":"vtex_api","active":true,"config":{"base_url":"https://www.tennis.com.co"}},
+    {"name":"Ela","slug":"ela","integration_type":"vtex_api","active":true,"config":{"base_url":"https://www.ela.com.co"}},
+    {"name":"Studio F","slug":"studio-f","integration_type":"vtex_api","active":true,"config":{"base_url":"https://www.studiof.com.co"}}
+]

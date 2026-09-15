@@ -7,6 +7,7 @@ import { OutfitsModule } from './modules/outfits/outfits.module';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { ProductSearchModule } from './modules/product-search/product-search.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { SupabaseModule } from './common/supabase/supabase.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -16,6 +17,7 @@ import configuration from './config/configuration';
       envFilePath: '.env',
       load: [configuration],
     }),
+    SupabaseModule,
     ClosetModule, OutfitsModule, AnalysisModule, ProductSearchModule, RecommendationsModule],
   controllers: [AppController],
   providers: [AppService],
