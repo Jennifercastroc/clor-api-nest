@@ -1,17 +1,11 @@
 export const RANKING_WEIGHTS = {
-<<<<<<< HEAD
   categoryMatch: 0.39,
   colorMatch: 0.15,
-  styleMatch: 0.15,
-=======
-  categoryMatch: 0.3,
-  colorMatch: 0.2,
   // La señal de "estilo" se reparte ahora entre producto y tienda en vez de vivir solo acá -
   // el 0.10 original de styleMatch se partió en dos mitades iguales (styleMatch +
   // storeStyleMatch) en lugar de sumar un peso nuevo sin tocar los demás.
-  styleMatch: 0.05,
+  styleMatch: 0.1,
   storeStyleMatch: 0.05,
->>>>>>> 7e69909eccb4efe59ab6288aae2cd21a92857be2
   priceCompatibility: 0.2,
   sizeAvailability: 0.1,
   nationalProximity: 0.01,
