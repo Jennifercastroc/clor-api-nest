@@ -1,10 +1,10 @@
 export const RANKING_WEIGHTS = {
-  categoryMatch: 0.3,
-  colorMatch: 0.2,
-  styleMatch: 0.1,
+  categoryMatch: 0.39,
+  colorMatch: 0.15,
+  styleMatch: 0.15,
   priceCompatibility: 0.2,
   sizeAvailability: 0.1,
-  nationalProximity: 0.1,
+  nationalProximity: 0.01,
 } as const;
 
 const weightSum = Object.values(RANKING_WEIGHTS).reduce((sum, weight) => sum + weight, 0);
