@@ -1,98 +1,196 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Outfit Optimizer — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Sistema que recibe una imagen o un tablero de inspiración de outfits,
+identifica las prendas con IA, las compara contra lo que el usuario ya
+tiene, y recomienda productos reales de tiendas locales para completar
+el look — con filtros y ranking explicables, no una caja negra.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Este README es del **backend** (NestJS). El frontend (Next.js) tiene su
+propio repo y su propio README.
 
-## Description
+## Índice
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [Modelo de negocio y problema que resuelve](#modelo-de-negocio-y-problema-que-resuelve)
+- [Cómo funciona (flujo end-to-end)](#cómo-funciona-flujo-end-to-end)
+- [El papel de la IA](#el-papel-de-la-ia)
+- [Stack técnico](#stack-técnico)
+- [Tiendas integradas](#tiendas-integradas)
+- [Seguridad](#seguridad)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Cómo correrlo](#cómo-correrlo)
+- [Limitaciones conocidas y roadmap](#limitaciones-conocidas-y-roadmap)
 
-## Project setup
+## Modelo de negocio y problema que resuelve
 
-```bash
-$ bun install
+Casi todo el mundo ha visto un outfit en Pinterest, Instagram, o en la
+calle, y ha pensado "quiero ese look" — pero no sabe exactamente qué
+prendas lo componen, cuáles ya tiene, ni dónde comprar las que le
+faltan, especialmente en tiendas que existan donde vive. La mayoría de
+herramientas se quedan en "aquí tienes fotos parecidas". Nosotros
+cerramos el círculo entre la inspiración y la compra real.
+
+El valor para el usuario final es reducir fricción: de una imagen a una
+lista corta y explicable de productos que puede comprar hoy, en tiendas
+reales, dentro de su presupuesto y su talla.
+
+El valor para las tiendas es aparecer frente a compradores que ya
+tienen intención de compra específica (no búsqueda genérica), filtrados
+por si su estilo de marca realmente encaja con lo que el usuario busca
+— así que no compiten contra tiendas de un estilo completamente
+distinto por el mismo tráfico.
+
+## Cómo funciona (flujo end-to-end)
+
+```
+Imagen / Tablero de inspiración
+        ↓
+Azure OpenAI Vision (análisis estructurado)
+        ↓
+Lista de prendas requeridas (categoría, color, patrón, estilo)
+        ↓
+Comparación con lo que el usuario ya tiene (checklist)
+        ↓
+Prendas faltantes
+        ↓
+Búsqueda en tiendas reales (Shopify / VTEX)
+        ↓
+Filtrado duro (categoría, talla, disponibilidad, género)
+        ↓
+Ranking por texto (categoría, color, estilo, precio, estilo de tienda)
+        ↓
+Re-ranking visual con IA (foto real del producto vs. imagen de referencia)
+        ↓
+Recomendaciones explicables (con el desglose del porqué de cada una)
 ```
 
-## Compile and run the project
+## El papel de la IA
 
-```bash
-# development
-$ bun run start
+La IA (Azure OpenAI, modelo con visión) tiene un trabajo deliberadamente
+acotado: **leer la imagen y convertirla en datos estructurados y
+validados** — nunca decide qué recomendar. Esta separación es una
+decisión de arquitectura, no una limitación:
 
-# watch mode
-$ bun run start:dev
+- El análisis por imagen produce un JSON validado con **Zod** (schema
+  estricto, `strict: true` en la respuesta de Azure), con campos como
+  `category`, `color`, `material`, `pattern`, y `style` (un enum
+  cerrado de 8 valores: `streetwear`, `casual`, `old_money`, `preppy`,
+  `romantico`, `alternativo`, `cottagecore`, `creativo` — cerrado a
+  propósito para que sea comparable de forma determinística contra el
+  estilo de cada tienda, en vez de depender de texto libre inconsistente).
+- Todo lo que pasa después — comparar con el clóset, filtrar
+  candidatos, calcular el ranking, decidir qué mostrar — es **código
+  determinístico nuestro**, con pesos configurables y auditable línea
+  por línea. Si algo sale mal, se puede diagnosticar exactamente en qué
+  paso, en vez de adivinar qué "pensó" un modelo.
+- Hay un segundo uso, más acotado, de IA en el re-ranking visual: sobre
+  el top de candidatos ya filtrados y rankeados por texto, se le pide
+  al modelo comparar la foto real del producto contra la imagen de
+  referencia y dar un score de similitud visual — de nuevo, un input
+  más al ranking determinístico, no una decisión final por sí sola.
 
-# production mode
-$ bun run start:prod
+## Stack técnico
+
+| Tecnología | Para qué se usa |
+|---|---|
+| **NestJS + TypeScript** | Backend: controllers, casos de uso, lógica de negocio separada de infraestructura |
+| **Azure OpenAI (Responses API)** | Análisis visual del outfit, extracción estructurada |
+| **Zod** | Validación de los datos que devuelve la IA antes de confiar en ellos |
+| **Supabase (PostgreSQL + Auth)** | Base de datos, autenticación de usuarios (JWT), y RLS |
+| **Bun** | Runtime y gestor de paquetes (más rápido que npm para este proyecto) |
+| **@nestjs/throttler** | Rate limiting básico para proteger los endpoints |
+| **Shopify (protocolo de comercio) / VTEX (API pública)** | Integraciones reales de catálogo con tiendas |
+
+## Tiendas integradas
+
+Las tiendas no están hardcodeadas: viven en la tabla `stores` de
+Supabase, con un `integration_type` (`shopify_mcp` | `vtex_api` |
+`manual`) que decide qué adaptador usar, detrás de una interfaz común
+`ProductProvider`. Cada tienda tiene además `style_tags` y
+`is_versatile` — esto es lo que permite que una búsqueda de estilo
+streetwear priorice tiendas como Undergold, y una de estilo old money
+priorice tiendas como Studio F, en vez de mezclar resultados sin
+criterio.
+
+No se hace scraping genérico: cada integración se verificó en vivo
+contra la API real de la tienda antes de agregarla. Si una tienda no
+tiene una fuente de datos viable, se usa carga manual curada en vez de
+inventar disponibilidad.
+
+## Seguridad
+
+- Autenticación vía Supabase Auth (JWT), validado en un guard
+  compartido — no existe un módulo de negocio `users` propio.
+- Nunca se exponen `AZURE_OPENAI_API_KEY` ni `SUPABASE_SERVICE_ROLE_KEY`
+  al frontend — viven solo en el `.env` del backend.
+- Rate limiting global (`@nestjs/throttler`) para mitigar abuso básico.
+- Validación de DTOs en cada endpoint.
+- Los errores nunca filtran detalles internos de Azure/Supabase al
+  cliente.
+
+## Estructura del proyecto
+
+```
+src/
+├── modules/
+│   ├── closet/            # clóset del usuario (checklist, sin fotos)
+│   ├── outfits/            # endpoints de análisis (modo 1 y modo 2)
+│   ├── analysis/           # cliente de Azure OpenAI, schemas Zod
+│   ├── product-search/     # providers (Shopify/VTEX), filtering
+│   └── recommendations/    # ranking determinístico configurable
+├── common/
+│   ├── guards/             # auth guard compartido (Supabase JWT)
+│   ├── filters/            # exception filters (sin fugas de secretos)
+│   └── supabase/           # cliente + interfaz de repositorio
+├── config/
+│   └── configuration.ts    # validación de env vars al boot
+└── main.ts
 ```
 
-## Run tests
+## Cómo correrlo
+
+Requisitos: **Bun** instalado, **Node ≥20.9.0** disponible (algunas
+dependencias del build lo requieren), y un archivo `.env` con las
+variables reales (nunca commiteado — usa `.env.example` como plantilla).
 
 ```bash
-# unit tests
-$ bun run test
+# Instalar dependencias
+bun install
 
-# e2e tests
-$ bun run test:e2e
+# Modo desarrollo (con watch)
+bun run start:dev
 
-# test coverage
-$ bun run test:cov
+# Build de producción
+bun run build
+
+# Correr el build de producción directamente
+bun dist/main.js
+
+# Tests
+bun run test
+
+# Lint
+bun run lint
+
+# Chequeo de tipos sin compilar
+bunx tsc --noEmit
 ```
 
-## Deployment
+Variables de entorno necesarias (nombres, sin valores — cópialos de
+`.env.example`): configuración de Azure OpenAI (endpoint, api key,
+deployment), configuración de Supabase (url, anon key, service role
+key), y el puerto del servidor.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Limitaciones conocidas y roadmap
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ bun install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- La integración real con Pinterest (OAuth + tableros del usuario)
+  quedó pendiente de aprobación de Trial access de la API de Pinterest
+  — hoy el flujo funciona subiendo imágenes/capturas directamente, lo
+  cual además resultó ser más flexible (no depende de tener cuenta de
+  Pinterest ni de tener las imágenes descargadas).
+- Fallback a caché cuando una tienda falla en vivo: diseñado, no
+  implementado todavía (no bloqueante para el MVP).
+- Cobertura de tiendas por estilo sigue creciendo — hay estilos del
+  vocabulario (ej. cottagecore, alternativo) con menos tiendas
+  dedicadas que streetwear u old money por ahora.
+- Personalización basada en historial del usuario a través del tiempo:
+  planeada para después de la competencia.
