@@ -15,7 +15,7 @@ export class SupabaseProductCatalogRepository implements ProductCatalogRepositor
   async getActiveStores(): Promise<StoreRecord[]> {
     const { data, error } = await this.supabase
       .from('stores')
-      .select('id, integration_type, config')
+      .select('id, integration_type, config, is_national, style_tags, is_versatile')
       .eq('active', true);
 
     if (error) {
@@ -26,6 +26,9 @@ export class SupabaseProductCatalogRepository implements ProductCatalogRepositor
       id: row.id as string,
       integrationType: row.integration_type as string,
       config: (row.config ?? {}) as Record<string, unknown>,
+      isNational: (row.is_national ?? true) as boolean,
+      styleTags: (row.style_tags ?? []) as string[],
+      isVersatile: (row.is_versatile ?? false) as boolean,
     }));
   }
 

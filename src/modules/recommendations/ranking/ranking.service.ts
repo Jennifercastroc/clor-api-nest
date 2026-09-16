@@ -3,6 +3,8 @@ import { RANKING_WEIGHTS } from './ranking.config';
 
 export interface RankingStoreInfo {
   isNational?: boolean;
+  styleTags?: string[];
+  isVersatile?: boolean;
 }
 
 export interface RankingConstraints {
@@ -91,6 +93,24 @@ function nationalProximityScore(store?: RankingStoreInfo): number {
   return store?.isNational === false ? 0 : 1;
 }
 
+// Señal de estilo a nivel de TIENDA, separada de styleMatch (que compara el estilo del
+// producto individual). Una tienda que en general no es streetwear puede colar productos
+// puntuales sin que su identidad de marca importe - esto le da peso a esa identidad.
+function storeStyleMatchScore(store: RankingStoreInfo | undefined, garmentStyle: string | null): number {
+  if (store?.isVersatile) {
+    return 1;
+  }
+  const targetStyle = normalize(garmentStyle);
+  if (!targetStyle) {
+    return 1;
+  }
+  if (!store?.styleTags || store.styleTags.length === 0) {
+    return 0.5;
+  }
+  const normalizedTags = store.styleTags.map((tag) => normalize(tag));
+  return normalizedTags.includes(targetStyle) ? 1 : 0;
+}
+
 export function scoreCandidate(
   candidate: SearchResultWithStore,
   garment: MissingGarment,
@@ -101,6 +121,7 @@ export function scoreCandidate(
     categoryMatch: exactMatchScore(candidate.category, garment.category),
     colorMatch: substringMatchScore(candidate.color, garment.color),
     styleMatch: substringMatchScore(candidate.style, garment.style),
+    storeStyleMatch: storeStyleMatchScore(store, garment.style),
     priceCompatibility: priceCompatibilityScore(candidate, constraints.budget),
     sizeAvailability: sizeAvailabilityScore(candidate, constraints.size),
     nationalProximity: nationalProximityScore(store),

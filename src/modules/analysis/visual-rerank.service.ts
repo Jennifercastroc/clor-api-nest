@@ -52,9 +52,13 @@ function buildPrompt(garment: VisualRerankGarment, referenceCount: number, candi
     'y así sucesivamente). ' +
     `Estamos buscando un reemplazo para esta prenda: ${describeGarment(garment)}. ` +
     'Para cada candidato, compara qué tan similar es visualmente a esa prenda descrita Y al estilo ' +
-    'general de las imágenes de referencia (silueta, corte, textura, nivel de formalidad). Da un ' +
-    'visual_match_score de 0 a 100 (100 = prácticamente la misma prenda, 0 = no se parece en nada) ' +
-    'y una razón breve en español explicando el score.'
+    'general de las imágenes de referencia (silueta, corte, textura, nivel de formalidad). Sé ' +
+    'especialmente estricto con el PATRÓN/ESTAMPADO: un candidato liso cuando se busca algo ' +
+    'estampado (o viceversa), o con un estampado claramente distinto (ej. rayas vs. flores vs. ' +
+    'liso vs. animal print), es una diferencia grande que debe bajar el score notablemente aunque ' +
+    'la silueta y el color coincidan bien - no es un detalle menor. Da un visual_match_score de 0 ' +
+    'a 100 (100 = prácticamente la misma prenda, 0 = no se parece en nada) y una razón breve en ' +
+    'español explicando el score, mencionando explícitamente si el patrón coincide o no.'
   );
 }
 

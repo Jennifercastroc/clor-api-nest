@@ -78,11 +78,11 @@ export class AnalysisService {
     const outfitItems = await this.persistOutfitItems(outfitAnalysisId, userId, matches);
 
     const stores = await this.productCatalogRepository.getActiveStores();
-    // La tabla `stores` todavía no tiene una columna is_national, así que este mapa hoy
-    // siempre da el score neutral (1.0) en nationalProximity - queda listo para cuando esa
-    // columna exista sin tener que tocar esta orquestación.
     const storesById: Record<string, RankingStoreInfo> = Object.fromEntries(
-      stores.map((store) => [store.id, {}]),
+      stores.map((store) => [
+        store.id,
+        { isNational: store.isNational, styleTags: store.styleTags, isVersatile: store.isVersatile },
+      ]),
     );
 
     const items: OutfitItemOutput[] = await Promise.all(
@@ -198,7 +198,12 @@ export class AnalysisService {
       };
 
       const rawCandidates = await this.productSearchService.searchForMissingGarment(missingGarment);
-      const filtered = filterCandidates(rawCandidates, { size: dto.size, budget: dto.budget, gender });
+      const filtered = filterCandidates(rawCandidates, {
+        size: dto.size,
+        budget: dto.budget,
+        gender,
+        category: item.garment.category,
+      });
 
       if (filtered.length === 0) {
         return { ...base, recommendations: [] };
